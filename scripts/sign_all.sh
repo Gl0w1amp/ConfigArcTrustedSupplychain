@@ -46,7 +46,7 @@ for comp_name in "${component_names[@]}"; do
 done
 
 log_info "Regenerating manifest to include signature metadata"
-EXPECT_SIGNATURES=1 "${SCRIPT_DIR}/generate_manifest.sh"
+EXPECT_SIGNATURES=1 bash "${SCRIPT_DIR}/generate_manifest.sh"
 
 log_info "Signing manifest ${DIST_DIR}/manifest.json"
 minisign -Sm "${DIST_DIR}/manifest.json" -s "${secret_key_file}" -x "${DIST_DIR}/manifest.json.minisig"
