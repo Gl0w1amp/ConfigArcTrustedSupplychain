@@ -1,0 +1,89 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl jq awscli minisign unzip || true
+          if ! command -v minisign >/dev/null 2>&1; then
+            echo "Minisign not available via apt; installing static binary"
+            MINISIGN_URL="https://github.com/jedisct1/minisign/releases/download/0.11/minisign-linux"
+            curl -fsSL "${MINISIGN_URL}" -o /tmp/minisign
+            sudo install -m 0755 /tmp/minisign /usr/local/bin/minisign
+          fi
+
+      - name: Fetch upstream release
+        shell: bash
+        run: bash scripts/fetch_upstream.sh
+        env:
+          UPSTREAM_RELEASE_LATEST_URL: ${{ vars.UPSTREAM_RELEASE_LATEST_URL }}
+          UPSTREAM_ASSET_REGEX: ${{ vars.UPSTREAM_ASSET_REGEX }}
+          UPSTREAM_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}
+
+      - name: Extract inner zips
+        shell: bash
+        run: bash scripts/extract_inner_zips.sh
+        env:
+          SPLIT_INNER_ZIPS: ${{ vars.SPLIT_INNER_ZIPS }}
+          INNER_ZIP_REGEX: ${{ vars.INNER_ZIP_REGEX }}
+          MAX_INNER_ZIPS: ${{ vars.MAX_INNER_ZIPS }}
+
+      - name: Generate manifest (pre-sign)
+        shell: bash
+        run: bash scripts/generate_manifest.sh
+        env:
+          R2_PREFIX: ${{ vars.R2_PREFIX }}
+          SPLIT_INNER_ZIPS: ${{ vars.SPLIT_INNER_ZIPS }}
+
+      - name: Sign artifact and manifest
+        shell: bash
+        run: bash scripts/sign_all.sh
+        env:
+          MINISIGN_SECRET_KEY_B64: ${{ secrets.MINISIGN_SECRET_KEY_B64 }}
+          R2_PREFIX: ${{ vars.R2_PREFIX }}
+          SPLIT_INNER_ZIPS: ${{ vars.SPLIT_INNER_ZIPS }}
+
+      - name: Upload to R2
+        shell: bash
+        run: bash scripts/upload_r2.sh
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PREFIX: ${{ vars.R2_PREFIX }}
+          R2_PUBLIC_BASE_URL: ${{ vars.R2_PUBLIC_BASE_URL }}
+
+      - name: Print latest manifest URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          prefix="${R2_PREFIX:-configarc/trusted}"
+          if [[ -n "${R2_PUBLIC_BASE_URL:-}" ]]; then
+            base="${R2_PUBLIC_BASE_URL%/}"
+            echo "Latest manifest: ${base}/${prefix}/latest/manifest.json"
+          else
+            echo "Latest manifest key: s3://${R2_BUCKET}/${prefix}/latest/manifest.json"
+            echo "Endpoint: https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          fi
+        env:
+          R2_PREFIX: ${{ vars.R2_PREFIX }}
+          R2_PUBLIC_BASE_URL: ${{ vars.R2_PUBLIC_BASE_URL }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}

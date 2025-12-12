@@ -1,0 +1,8 @@
+.DS_Store
+dist/
+*.minisig
+*.key
+minisign.key
+*.log
+.env
+/tmp/
