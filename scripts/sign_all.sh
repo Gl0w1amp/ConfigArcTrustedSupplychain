@@ -48,6 +48,9 @@ done
 log_info "Regenerating manifest to include signature metadata"
 EXPECT_SIGNATURES=1 bash "${SCRIPT_DIR}/generate_manifest.sh"
 
+log_info "Collecting file hashes for artifacts into manifest"
+bash "${SCRIPT_DIR}/collect_file_hashes.sh"
+
 log_info "Signing manifest ${DIST_DIR}/manifest.json"
 minisign -Sm "${DIST_DIR}/manifest.json" -s "${secret_key_file}" -x "${DIST_DIR}/manifest.json.minisig"
 

@@ -30,6 +30,9 @@ ConfigArc Trusted Supplychain is an automated pipeline that fetches the latest u
   - `SPLIT_INNER_ZIPS` (default `1`; set `0` to skip component extraction)
   - `INNER_ZIP_REGEX` (default `(^|.*/)[^/]+\.zip$`; filters inner zip entries)
   - `MAX_INNER_ZIPS` (optional limit; `0` or unset = no limit)
+  - `DISABLE_FILE_HASHES` (set `1` to skip file-level hashes; default on)
+  - `HASH_FILE_REGEX` (regex for files inside zips; default matches `*.exe`/`*.dll`, case-insensitive)
+  - `MAX_HASH_FILES` (per-artifact hash cap; `0` or unset = no limit)
 
 ## Cloudflare R2 object layout
 ```
@@ -42,6 +45,7 @@ s3://$R2_BUCKET/$R2_PREFIX/
     components/
       <component>.zip
       <component>.zip.minisig
+    # manifest also records inner file hashes for executables by default
     manifest.json
     manifest.json.minisig
 ```
@@ -74,10 +78,11 @@ minisign -Vm dist/<artifact> -p keys/cats.pub
 - Verify the manifest using `keys/cats.pub` (embedded in the Launcher).
 - Prefer downloading individual components (entries with `kind: "component"`) and verify them with the minisig/public key.
 - If components are unavailable or disabled, fall back to the bundle (entry with `kind: "bundle"`), download and verify its minisig, then proceed.
+ - After verifying the manifest, validate the unpacked install directory: for each artifact, check the `files` array (path/size/sha256) for listed executables to ensure on-disk contents match.
 
 ## CI workflow
 - Triggered on `push` to `main`, daily cron, or manual dispatch.
-- Steps: install deps → fetch upstream → extract inner zips → generate manifest → sign bundle+components+manifest → upload to R2 → print latest manifest URL.
+- Steps: install deps → fetch upstream → extract inner zips → generate manifest → collect file hashes → sign bundle+components+manifest → upload to R2 → print latest manifest URL.
 - Uses Minisign from apt or falls back to a static binary download if needed.
 
 ## License

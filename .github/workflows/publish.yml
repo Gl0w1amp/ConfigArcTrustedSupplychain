@@ -45,6 +45,14 @@ jobs:
           R2_PREFIX: ${{ vars.R2_PREFIX }}
           SPLIT_INNER_ZIPS: ${{ vars.SPLIT_INNER_ZIPS }}
 
+      - name: Collect file hashes (exe/dll)
+        shell: bash
+        run: bash scripts/collect_file_hashes.sh
+        env:
+          DISABLE_FILE_HASHES: ${{ vars.DISABLE_FILE_HASHES }}
+          HASH_FILE_REGEX: ${{ vars.HASH_FILE_REGEX }}
+          MAX_HASH_FILES: ${{ vars.MAX_HASH_FILES }}
+
       - name: Sign artifact and manifest
         shell: bash
         run: bash scripts/sign_all.sh
