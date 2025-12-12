@@ -20,12 +20,17 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y curl jq awscli minisign unzip || true
+          sudo apt-get install -y curl jq unzip minisign || true
           if ! command -v minisign >/dev/null 2>&1; then
             echo "Minisign not available via apt; installing static binary"
-            MINISIGN_URL="https://github.com/jedisct1/minisign/releases/download/0.11/minisign-linux"
+            MINISIGN_URL="https://github.com/jedisct1/minisign/releases/latest/download/minisign-linux"
             curl -fsSL "${MINISIGN_URL}" -o /tmp/minisign
             sudo install -m 0755 /tmp/minisign /usr/local/bin/minisign
+          fi
+          if ! command -v aws >/dev/null 2>&1; then
+            echo "aws CLI not found; installing via pip"
+            python3 -m pip install --upgrade --user awscli
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           fi
 
       - name: Fetch upstream release
