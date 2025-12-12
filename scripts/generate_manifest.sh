@@ -45,8 +45,7 @@ else
   fi
 fi
 
-build_date_path="$(date -u +"%Y/%m/%d")"
-build_path="builds/${build_date_path}/${build_id}"
+build_path="builds/${build_id}"
 
 artifact_key="${r2_prefix}/${build_path}/${artifact_name}"
 artifact_sig_key="${r2_prefix}/${build_path}/${artifact_name}.minisig"

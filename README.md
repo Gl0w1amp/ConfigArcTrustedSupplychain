@@ -36,7 +36,7 @@ ConfigArc Trusted Supplychain is an automated pipeline that fetches the latest u
 s3://$R2_BUCKET/$R2_PREFIX/
   latest/manifest.json
   latest/manifest.json.minisig
-  builds/YYYY/MM/DD/<build_id>/
+  builds/<build_id>/
     <bundle>.zip
     <bundle>.zip.minisig
     components/
