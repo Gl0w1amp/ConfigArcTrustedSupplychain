@@ -27,11 +27,6 @@ jobs:
             curl -fsSL "${MINISIGN_URL}" -o /tmp/minisign
             sudo install -m 0755 /tmp/minisign /usr/local/bin/minisign
           fi
-          if ! command -v aws >/dev/null 2>&1; then
-            echo "aws CLI not found; installing via pip"
-            python3 -m pip install --upgrade --user awscli
-            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          fi
 
       - name: Fetch upstream release
         shell: bash
