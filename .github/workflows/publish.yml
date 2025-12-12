@@ -21,12 +21,6 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y curl jq unzip minisign || true
-          if ! command -v minisign >/dev/null 2>&1; then
-            echo "Minisign not available via apt; installing static binary"
-            MINISIGN_URL="https://github.com/jedisct1/minisign/releases/latest/download/minisign-linux"
-            curl -fsSL "${MINISIGN_URL}" -o /tmp/minisign
-            sudo install -m 0755 /tmp/minisign /usr/local/bin/minisign
-          fi
 
       - name: Fetch upstream release
         shell: bash
